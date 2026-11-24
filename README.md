@@ -2,7 +2,7 @@
 
 A secure, lightweight WordPress donation plugin for one-time and monthly recurring donations via **Stripe Checkout** and the **PayPal REST API**.
 
-- **Version:** 2.1.0
+- **Version:** 2.2.0
 - **Requires:** WordPress 5.8+, PHP 7.4+
 - **License:** GPLv2 or later
 
@@ -18,9 +18,11 @@ A secure, lightweight WordPress donation plugin for one-time and monthly recurri
 | Webhooks | Stripe and PayPal endpoints with signature verification for renewals, refunds and failures |
 | Admin | One page, six tabs: Overview, Form, Style, Emails, Settings, Tools |
 | Reporting | Revenue, gateway split, monthly trend, top donors, searchable list, details modal, CSV export |
+| Data control | Delete a single donation or a bulk selection with all of its meta |
 | Emails | Editable templates, placeholders, custom sender, test email |
 | Styling | Color pickers for normal/hover/active states + border radius (CSS variables) |
-| Security | Nonces on every submission and save, honeypot, rate limiting, server-side validation, sanitized settings |
+| Security | Nonces on every submission and save (opt-out toggle for cached sites), honeypot, rate limiting, server-side validation, sanitized settings |
+| Amount modes | Preset buttons fill the amount field, or custom-amount mode leaves it empty with a placeholder while a typed value overrides the preset |
 | Performance | Assets only load where used, cached analytics and generated CSS |
 
 ## Shortcodes
@@ -74,7 +76,7 @@ Plugin identity lives in one place — the constants and `$GLOBALS['cdf_plugin_c
 ```php
 define( 'CDF_PLUGIN_NAME', 'CDF Donation Form with PayPal and Stripe' );
 define( 'CDF_PLUGIN_SLUG', 'cdf-donation-form-with-paypal-and-stripe' );
-define( 'CDF_PLUGIN_VERSION', '2.1.0' );
+define( 'CDF_PLUGIN_VERSION', '2.2.0' );
 define( 'CDF_PLUGIN_PREFIX', 'cdf_' );
 define( 'CDF_PLUGIN_CURRENCY', 'USD' );
 ```
@@ -87,6 +89,7 @@ Change the name, slug, version, currency or default amounts there and the admin 
 
 - `cdf_donation_logged( $post_id, $data )` — after a donation is stored
 - `cdf_donation_status_changed( $post_id, $status )` — webhook status update
+- `cdf_before_delete_donation( $post_id )` — before a donation is permanently deleted
 
 **Filters**
 

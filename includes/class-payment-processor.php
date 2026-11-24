@@ -95,19 +95,22 @@ function cdf_listen_frontend_donation_submission() {
     // phpcs:ignore WordPress.Security.NonceVerification.Missing
     $type = isset( $_POST['donation_form_type'] ) && 'monthly' === $_POST['donation_form_type'] ? 'monthly' : 'one_time';
 
-    // Nonce is ALWAYS required. The insecure "nonce bypass" option is gone;
-    // cached sites should exclude the form page from caching instead.
-    // phpcs:ignore WordPress.Security.NonceVerification.Missing
-    $nonce = isset( $_POST['cdf_donation_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['cdf_donation_nonce'] ) ) : '';
-    if ( ! wp_verify_nonce( $nonce, 'cdf_process_donation' ) ) {
-        // Legacy forms from cached pages used type specific actions.
+    // Nonce verification. Disabling it is only meant for sites whose page
+    // cache serves stale nonces (Donations → Form → Security). Honeypot,
+    // rate limiting and every validation rule still apply either way.
+    if ( ! cdf_is_nonce_check_disabled() ) {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $legacy = $type === 'monthly'
-            ? ( isset( $_POST['custom_monthly_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_monthly_nonce'] ) ) : '' )
-            : ( isset( $_POST['custom_onetime_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_onetime_nonce'] ) ) : '' );
-        $legacy_action = 'monthly' === $type ? 'execute_monthly_donation_nonce' : 'execute_onetime_donation_nonce';
-        if ( ! $legacy || ! wp_verify_nonce( $legacy, $legacy_action ) ) {
-            cdf_redirect_with_error( 'nonce' );
+        $nonce = isset( $_POST['cdf_donation_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['cdf_donation_nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'cdf_process_donation' ) ) {
+            // Legacy forms from cached pages used type specific actions.
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $legacy = 'monthly' === $type
+                ? ( isset( $_POST['custom_monthly_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_monthly_nonce'] ) ) : '' )
+                : ( isset( $_POST['custom_onetime_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_onetime_nonce'] ) ) : '' );
+            $legacy_action = 'monthly' === $type ? 'execute_monthly_donation_nonce' : 'execute_onetime_donation_nonce';
+            if ( ! $legacy || ! wp_verify_nonce( $legacy, $legacy_action ) ) {
+                cdf_redirect_with_error( 'nonce' );
+            }
         }
     }
 
@@ -135,12 +138,19 @@ function cdf_process_gateway_request( $type ) {
     // phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce verified above.
     $chosen_gateway = isset( $_POST['payment_method'] ) ? sanitize_key( wp_unslash( $_POST['payment_method'] ) ) : '';
     $custom_amount  = isset( $_POST['donation_amount'] ) ? floatval( wp_unslash( $_POST['donation_amount'] ) ) : 0;
+    $preset_amount  = isset( $_POST['preset_amount'] ) ? floatval( wp_unslash( $_POST['preset_amount'] ) ) : 0;
     $email          = isset( $_POST['donor_email'] ) ? sanitize_email( wp_unslash( $_POST['donor_email'] ) ) : '';
     $first_name     = isset( $_POST['donor_first'] ) ? sanitize_text_field( wp_unslash( $_POST['donor_first'] ) ) : '';
     $last_name      = isset( $_POST['donor_last'] ) ? sanitize_text_field( wp_unslash( $_POST['donor_last'] ) ) : '';
     $phone          = isset( $_POST['donor_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['donor_phone'] ) ) : '';
     $is_anonymous   = isset( $_POST['donor_anonymous'] ) ? '1' : '0';
     // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+    // A typed custom amount always wins; otherwise the selected preset is used.
+    // This covers both form modes, so the amount can never be empty silently.
+    if ( $custom_amount <= 0 && $preset_amount > 0 ) {
+        $custom_amount = $preset_amount;
+    }
 
     // ---- Server side validation ----
     if ( ! in_array( $chosen_gateway, array( 'stripe', 'paypal' ), true ) ) {

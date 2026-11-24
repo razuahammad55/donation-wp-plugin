@@ -810,3 +810,71 @@
         margin-top: 6px;
     }
 }
+
+/* Bulk actions + delete */
+.cdf-bulk-form {
+    margin: 0;
+}
+
+.cdf-bulk-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.cdf-bulk-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.cdf-bulk-hint {
+    font-size: 12px;
+}
+
+.cdf-col-check {
+    width: 32px;
+    text-align: center;
+}
+
+.cdf-delete-donation {
+    color: #b91c1c;
+    border-color: #fca5a5;
+}
+
+.cdf-delete-donation:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+.cdf-bulk-delete {
+    color: #b91c1c;
+    border-color: #fca5a5;
+}
+
+.cdf-bulk-delete:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+/* Environment credential blocks */
+.cdf-env-heading {
+    margin: 6px 0 4px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.cdf-notice-inline {
+    margin: 12px 0 0;
+    max-width: 720px;
+}

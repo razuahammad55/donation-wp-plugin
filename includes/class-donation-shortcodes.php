@@ -141,6 +141,8 @@ function cdf_render_donation_form_shortcode( $atts ) {
     $show_phone  = ( '1' === $general['show_phone_field'] );
     $is_sandbox  = ( 'sandbox' === get_option( 'cdf_environment', 'sandbox' ) );
     $show_mode   = ( $is_sandbox && current_user_can( 'manage_options' ) );
+    $custom_mode = cdf_is_custom_amount_mode();
+    $custom_label = ! empty( $general['custom_amount_label'] ) ? $general['custom_amount_label'] : __( 'Custom amount', CDF_PLUGIN_TEXT_DOMAIN );
     $form_id     = 'cdf-donation-form-' . wp_rand( 1000, 9999 );
     $button_text = $is_both ? $general['button_text_onetime'] : ( 'monthly' === $type ? $general['button_text_monthly'] : $general['button_text_onetime'] );
 
@@ -168,7 +170,9 @@ function cdf_render_donation_form_shortcode( $atts ) {
 
         <form method="POST" action="" id="<?php echo esc_attr( $form_id ); ?>" class="cdf-form" novalidate
             data-onetime-text="<?php echo esc_attr( $general['button_text_onetime'] ); ?>"
-            data-monthly-text="<?php echo esc_attr( $general['button_text_monthly'] ); ?>">
+            data-monthly-text="<?php echo esc_attr( $general['button_text_monthly'] ); ?>"
+            data-custom-mode="<?php echo $custom_mode ? '1' : '0'; ?>"
+            data-default-amount="<?php echo esc_attr( $default_amount ); ?>">
             <input type="hidden" name="cdf_action" value="process_donation">
             <?php wp_nonce_field( 'cdf_process_donation', 'cdf_donation_nonce' ); ?>
 
@@ -217,10 +221,19 @@ function cdf_render_donation_form_shortcode( $atts ) {
                     max="<?php echo esc_attr( $general['max_amount'] ); ?>"
                     step="any"
                     inputmode="decimal"
+                    <?php if ( $custom_mode ) : ?>
+                    placeholder="<?php echo esc_attr( $custom_label ); ?>"
+                    <?php else : ?>
                     value="<?php echo esc_attr( $default_amount ); ?>"
-                    required>
+                    required
+                    <?php endif; ?>>
                 <span class="cdf-currency-suffix"><?php echo esc_html( $currency ); ?></span>
             </div>
+            <?php
+            // The selected preset travels separately so the typed custom
+            // amount can stay empty until the donor chooses to enter one.
+            ?>
+            <input type="hidden" name="preset_amount" class="cdf-preset-amount" value="<?php echo esc_attr( $default_amount ); ?>">
             <p class="cdf-field-hint">
                 <?php
                 printf(
@@ -229,6 +242,10 @@ function cdf_render_donation_form_shortcode( $atts ) {
                     esc_html( $symbol . number_format( floatval( $general['min_amount'] ), 2 ) ),
                     esc_html( $symbol . number_format( floatval( $general['max_amount'] ), 2 ) )
                 );
+                if ( $custom_mode ) {
+                    echo '<br>';
+                    esc_html_e( 'Leave the amount empty to give the selected preset amount, or type your own to override it.', CDF_PLUGIN_TEXT_DOMAIN );
+                }
                 ?>
             </p>
 
