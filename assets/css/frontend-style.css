@@ -1,212 +1,625 @@
 /**
- * Plugin Name: CDF Donation Form with PayPal and Stripe
- * Description: Frontend Stylesheet for Version 2.0.0
- * Author: Razu Ahammad
+ * CDF Donation Form — front-end styles.
+ * All classes are prefixed with .cdf- and scoped to the plugin containers.
  */
 
-/* ===========================
-    CUSTOM DONATION FORM STYLES
-   ============================ */
+.cdf-container,
+.cdf-receipt-card {
+    --cdf-radius: var(--cdf-border-radius, 8px);
+    --cdf-amt-bg: var(--amt-btn-bg-normal, #f7fafc);
+    --cdf-amt-text: var(--amt-btn-text-normal, #2d3748);
+    --cdf-amt-bg-hover: var(--amt-btn-bg-hover, #edf2f7);
+    --cdf-amt-text-hover: var(--amt-btn-text-hover, #2d3748);
+    --cdf-amt-bg-active: var(--amt-btn-bg-active, #ebf8ff);
+    --cdf-amt-text-active: var(--amt-btn-text-active, #2b6cb0);
+    --cdf-gw-bg: var(--gateway-bg-normal, #ffffff);
+    --cdf-gw-text: var(--gateway-text-normal, #2d3748);
+    --cdf-gw-bg-hover: var(--gateway-bg-hover, #f7fafc);
+    --cdf-gw-text-hover: var(--gateway-text-hover, #2d3748);
+    --cdf-gw-bg-active: var(--gateway-bg-active, #ebf8ff);
+    --cdf-gw-text-active: var(--gateway-text-active, #2b6cb0);
+    --cdf-sub-bg: var(--submit-btn-bg-normal, #3182ce);
+    --cdf-sub-text: var(--submit-btn-text-normal, #ffffff);
+    --cdf-sub-bg-hover: var(--submit-btn-bg-hover, #2b6cb0);
+    --cdf-sub-text-hover: var(--submit-btn-text-hover, #ffffff);
+    --cdf-sub-bg-active: var(--submit-btn-bg-active, #2b6cb0);
+    --cdf-sub-text-active: var(--submit-btn-text-active, #ffffff);
+    --cdf-border: #e2e8f0;
+    --cdf-muted: #64748b;
+    --cdf-ink: #0f172a;
+    box-sizing: border-box;
+}
 
-.styled-donation-container {
-    max-width: 550px;
+.cdf-container *,
+.cdf-container *::before,
+.cdf-container *::after,
+.cdf-receipt-card *,
+.cdf-receipt-card *::before,
+.cdf-receipt-card *::after {
+    box-sizing: inherit;
+}
+
+.cdf-container {
+    max-width: 560px;
     margin: 0 auto;
-    padding: 25px;
-    background: #ffffff;
-    border-radius: calc(var(--cdf-border-radius, 8px) + 4px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    box-sizing: border-box;
+    padding: 24px;
+    background: #fff;
+    border: 1px solid var(--cdf-border);
+    border-radius: var(--cdf-radius);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--cdf-ink);
 }
 
-.styled-donation-container * {
-    box-sizing: border-box;
-}
-
-.form-section-label {
+/* Notices */
+.cdf-notice {
+    padding: 12px 14px;
+    border-radius: var(--cdf-radius);
     font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #4a5568;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
+    border-left: 4px solid transparent;
 }
 
-/* --- Amount Buttons Grid & Active State --- */
-.amount-btn-grid {
+.cdf-notice-error {
+    background: #fef2f2;
+    border-left-color: #dc2626;
+    color: #991b1b;
+}
+
+.cdf-notice-warning {
+    background: #fffbeb;
+    border-left-color: #d97706;
+    color: #92400e;
+}
+
+.cdf-notice-test {
+    background: #eff6ff;
+    border-left-color: #2563eb;
+    color: #1e40af;
+}
+
+.cdf-form-title {
+    margin: 0 0 20px;
+    font-size: 22px;
+    color: var(--cdf-ink);
+}
+
+/* Fieldsets */
+.cdf-fieldset {
+    border: 0;
+    margin: 0 0 22px;
+    padding: 0;
+    min-width: 0;
+}
+
+.cdf-legend {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cdf-muted);
+}
+
+/* Frequency toggle */
+.cdf-frequency-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 5px;
+    border-radius: calc(var(--cdf-radius) + 2px);
+}
+
+.cdf-freq-option {
+    position: relative;
+    margin: 0;
+    display: flex;
+}
+
+.cdf-freq-option input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+}
+
+.cdf-freq-option span {
+    flex: 1;
+    text-align: center;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cdf-muted);
+    border-radius: var(--cdf-radius);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cdf-freq-option input:checked + span {
+    background: #fff;
+    color: var(--cdf-ink);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.cdf-freq-option input:focus-visible + span {
+    outline: 2px solid #3182ce;
+    outline-offset: 2px;
+}
+
+/* Amount grid */
+.cdf-amount-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    margin-bottom: 15px;
 }
 
-body .styled-donation-container .amt-btn {
-    padding: 12px 16px !important;
-    background: var(--amt-btn-bg-normal, #f7fafc) !important;
-    color: var(--amt-btn-text-normal, #2d3748) !important;
-    border: 2px solid #e2e8f0 !important;
-    border-radius: var(--cdf-border-radius, 8px) !important;
-    font-size: 16px;
-    font-weight: 600;
+.cdf-amt-btn {
+    padding: 14px 8px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--cdf-amt-text);
+    background: var(--cdf-amt-bg);
+    border: 1px solid var(--cdf-border);
+    border-radius: var(--cdf-radius);
     cursor: pointer;
-    transition: all 0.2s ease;
-    outline: none !important;
-    box-shadow: none !important;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    line-height: 1.1;
+}
+
+.cdf-amt-btn:hover {
+    background: var(--cdf-amt-bg-hover);
+    color: var(--cdf-amt-text-hover);
+}
+
+.cdf-amt-btn:active {
+    transform: translateY(1px);
+}
+
+.cdf-amt-btn.active {
+    background: var(--cdf-amt-bg-active);
+    color: var(--cdf-amt-text-active);
+    border-color: var(--cdf-amt-text-active);
+}
+
+.cdf-amt-btn:focus-visible,
+.cdf-gateway-row:focus-within,
+.cdf-submit-btn:focus-visible {
+    outline: 2px solid var(--cdf-amt-text-active);
+    outline-offset: 2px;
+}
+
+/* Amount input */
+.cdf-amount-input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--cdf-border);
+    border-radius: var(--cdf-radius);
+    background: #fff;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.cdf-currency-prefix,
+.cdf-currency-suffix {
+    padding: 0 12px;
+    font-weight: 700;
+    color: var(--cdf-muted);
+    background: #f8fafc;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.cdf-currency-prefix {
+    border-right: 1px solid var(--cdf-border);
+}
+
+.cdf-currency-suffix {
+    border-left: 1px solid var(--cdf-border);
+    letter-spacing: 0.04em;
+}
+
+.cdf-amount-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    padding: 14px 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--cdf-ink);
+    background: transparent;
+    box-shadow: none;
+}
+
+.cdf-amount-input:focus {
+    outline: none;
+}
+
+.cdf-amount-input-wrap:focus-within {
+    border-color: var(--cdf-amt-text-active);
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+}
+
+.cdf-field-hint {
+    margin: 0 0 20px;
+    font-size: 12px;
+    color: var(--cdf-muted);
+}
+
+/* Text fields */
+.cdf-row {
+    display: grid;
+    gap: 12px;
+}
+
+.cdf-row-2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.cdf-field {
+    margin: 0 0 14px;
+}
+
+.cdf-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 6px;
+}
+
+.cdf-field input[type="text"],
+.cdf-field input[type="email"],
+.cdf-field input[type="tel"],
+.cdf-field input[type="number"] {
     width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    color: var(--cdf-ink);
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--cdf-radius);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-body .styled-donation-container .amt-btn:hover {
-    background: var(--amt-btn-bg-hover, #edf2f7) !important;
-    color: var(--amt-btn-text-hover, #2d3748) !important;
-    border-color: #cbd5e0 !important;
+.cdf-field input:focus {
+    outline: none;
+    border-color: var(--cdf-amt-text-active);
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
 }
 
-body .styled-donation-container .amt-btn.active {
-    background: var(--amt-btn-bg-active, #ebf8ff) !important;
-    color: var(--amt-btn-text-active, #2b6cb0) !important;
-    border-color: var(--amt-btn-text-active, #2b6cb0) !important;
+.cdf-required {
+    color: #dc2626;
 }
 
-/* --- Input Fields --- */
-.input-amount-wrapper {
+.cdf-optional {
+    font-weight: 400;
+    color: var(--cdf-muted);
+}
+
+.cdf-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cdf-checkbox input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+}
+
+.cdf-checkbox label {
+    margin: 0;
+    font-weight: 400;
+    font-size: 14px;
+    color: #475569;
+}
+
+/* Gateways */
+.cdf-gateway-block {
+    display: grid;
+    gap: 10px;
+}
+
+.cdf-gateway-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    background: var(--cdf-gw-bg);
+    color: var(--cdf-gw-text);
+    border: 1px solid var(--cdf-border);
+    border-radius: var(--cdf-radius);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cdf-gateway-row input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+}
+
+.cdf-gateway-row:hover {
+    background: var(--cdf-gw-bg-hover);
+    color: var(--cdf-gw-text-hover);
+}
+
+.cdf-gateway-row.active {
+    background: var(--cdf-gw-bg-active);
+    color: var(--cdf-gw-text-active);
+    border-color: var(--cdf-gw-text-active);
+}
+
+.cdf-gateway-text {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.cdf-gw-icon {
+    flex: 0 0 auto;
+    display: block;
+}
+
+/* Honeypot */
+.cdf-hp {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* Submit */
+.cdf-submit-btn {
     position: relative;
     display: flex;
     align-items: center;
-    margin-bottom: 15px;
-}
-
-.currency-prefix {
-    position: absolute;
-    left: 14px;
-    font-size: 18px;
-    font-weight: 600;
-    color: #718096;
-    z-index: 2;
-}
-
-.currency-suffix {
-    position: absolute;
-    right: 14px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #a0aec0;
-    z-index: 2;
-}
-
-body .styled-donation-container input[type="text"],
-body .styled-donation-container input[type="email"],
-body .styled-donation-container input[type="number"],
-body .styled-donation-container input[type="tel"],
-body .styled-donation-container input[type="file"],
-body .styled-donation-container textarea,
-body .styled-donation-container select {
-    background-color: #ffffff !important;
-    color: #2d3748 !important;
-    border: 2px solid #e2e8f0 !important;
-    border-radius: var(--cdf-border-radius, 8px) !important;
-    box-shadow: none !important;
-    outline: none !important;
-    box-sizing: border-box !important;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-}
-
-.input-amount-wrapper input[type="number"] {
-    width: 100%;
-    padding: 12px 50px 12px 30px !important;
-    font-size: 18px;
-    font-weight: 600;
-    transition: border-color 0.2s ease;
-}
-
-.input-amount-wrapper input[type="number"]:focus {
-    border-color: #3182ce !important;
-}
-
-.donor-name-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    justify-content: center;
     gap: 10px;
-    margin-bottom: 10px;
-}
-
-.donor-full-row {
-    margin-bottom: 15px;
-}
-
-.donor-full-row input,
-.donor-name-row input {
     width: 100%;
-    padding: 12px 14px !important;
+    margin-top: 8px;
+    padding: 16px 20px;
     font-size: 15px;
-    transition: border-color 0.2s ease;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cdf-sub-text);
+    background: var(--cdf-sub-bg);
+    border: 1px solid transparent;
+    border-radius: var(--cdf-radius);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
-.donor-full-row input:focus,
-.donor-name-row input:focus {
-    border-color: #3182ce !important;
+.cdf-submit-btn:hover {
+    background: var(--cdf-sub-bg-hover);
+    color: var(--cdf-sub-text-hover);
 }
 
-/* --- Gateway Options State System --- */
-.gateway-selection-block {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 25px;
+.cdf-submit-btn:active {
+    background: var(--cdf-sub-bg-active);
+    color: var(--cdf-sub-text-active);
 }
 
-body .styled-donation-container .gateway-row {
+.cdf-submit-btn[disabled] {
+    opacity: 0.75;
+    cursor: progress;
+}
+
+.cdf-spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: cdf-spin 0.7s linear infinite;
+}
+
+.cdf-submit-btn.is-loading .cdf-spinner {
+    display: inline-block;
+}
+
+@keyframes cdf-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.cdf-secure-note {
+    margin: 12px 0 0;
+    font-size: 12px;
+    text-align: center;
+    color: var(--cdf-muted);
+}
+
+.cdf-lock {
+    margin-right: 4px;
+}
+
+/* Receipt */
+.cdf-receipt-card {
+    max-width: 560px;
+    margin: 24px auto;
+    padding: 28px;
+    background: #fff;
+    border: 1px solid var(--cdf-border);
+    border-radius: calc(var(--cdf-radius) + 4px);
+    box-shadow: 0 8px 24px -16px rgba(15, 23, 42, 0.35);
+    font-size: 16px;
+    color: var(--cdf-ink);
+}
+
+.cdf-receipt-head {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.cdf-receipt-check {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
     display: flex;
     align-items: center;
-    padding: 14px 16px;
-    background: var(--gateway-bg-normal, #ffffff) !important;
-    color: var(--gateway-text-normal, #2d3748) !important;
-    border: 2px solid #e2e8f0 !important;
-    border-radius: var(--cdf-border-radius, 8px) !important;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-body .styled-donation-container .gateway-row:hover {
-    background: var(--gateway-bg-hover, #f7fafc) !important;
-    color: var(--gateway-text-hover, #2d3748) !important;
-    border-color: #cbd5e0 !important;
-}
-
-body .styled-donation-container .gateway-row.active {
-    background: var(--gateway-bg-active, #ebf8ff) !important;
-    color: var(--gateway-text-active, #2b6cb0) !important;
-    border-color: var(--gateway-text-active, #2b6cb0) !important;
-}
-
-.gateway-row input[type="radio"] {
-    margin-right: 12px;
-    border-radius: 50% !important;
-    cursor: pointer;
-}
-
-.gateway-text {
-    font-size: 16px;
-    font-weight: 600;
-    color: inherit !important;
-}
-
-/* --- Submit Button State System --- */
-body .styled-donation-container .donation-submit-trigger {
-    width: 100%;
-    padding: 16px !important;
-    background: var(--submit-btn-bg-normal, #3182ce) !important;
-    color: var(--submit-btn-text-normal, #ffffff) !important;
-    border: none !important;
-    border-radius: var(--cdf-border-radius, 8px) !important;
-    font-size: 18px;
+    justify-content: center;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #16a34a;
+    font-size: 24px;
     font-weight: 700;
-    cursor: pointer !important;
-    transition: all 0.2s ease;
 }
 
-body .styled-donation-container .donation-submit-trigger:hover {
-    background: var(--submit-btn-bg-hover, #2b6cb0) !important;
-    color: var(--submit-btn-text-hover, #ffffff) !important;
+.cdf-receipt-card h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    color: var(--cdf-ink);
+}
+
+.cdf-receipt-card p {
+    margin: 0;
+    color: var(--cdf-muted);
+    font-size: 14px;
+}
+
+.cdf-receipt-lines {
+    margin: 0;
+    padding: 18px 0 0;
+    border-top: 1px dashed #cbd5e1;
+}
+
+.cdf-receipt-lines > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 0;
+    font-size: 15px;
+}
+
+.cdf-receipt-lines dt {
+    margin: 0;
+    color: var(--cdf-muted);
+}
+
+.cdf-receipt-lines dd {
+    margin: 0;
+    color: var(--cdf-ink);
+    text-align: right;
+    word-break: break-word;
+}
+
+.cdf-receipt-foot {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--cdf-border);
+    font-size: 13px;
+    color: var(--cdf-muted);
+    text-align: center;
+}
+
+/* Cancel page card */
+.cdf-canceled-card {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 30px;
+    text-align: center;
+    background: #fff;
+    border: 1px solid var(--cdf-border);
+    border-radius: 8px;
+}
+
+.cdf-canceled-btn {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: #2563eb;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+/* Screen reader only */
+.cdf-container .screen-reader-text {
+    border: 0;
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    word-wrap: normal;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 600px) {
+    .cdf-container,
+    .cdf-receipt-card {
+        padding: 18px;
+        border-radius: calc(var(--cdf-radius));
+        margin-left: 12px;
+        margin-right: 12px;
+    }
+
+    .cdf-amount-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cdf-row-2 {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .cdf-amt-btn {
+        font-size: 16px;
+        padding: 13px 6px;
+    }
+
+    .cdf-submit-btn {
+        font-size: 14px;
+        padding: 15px 16px;
+    }
+
+    .cdf-receipt-lines > div {
+        font-size: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cdf-container *,
+    .cdf-receipt-card * {
+        animation-duration: 0.01ms;
+        transition-duration: 0.01ms;
+    }
+}
+
+/* RTL support */
+body.rtl .cdf-notice {
+    border-left: 0;
+    border-right: 4px solid transparent;
+}
+
+body.rtl .cdf-notice-error {
+    border-right-color: #dc2626;
+}
+
+body.rtl .cdf-currency-prefix {
+    border-right: 0;
+    border-left: 1px solid var(--cdf-border);
+}
+
+body.rtl .cdf-currency-suffix {
+    border-left: 0;
+    border-right: 1px solid var(--cdf-border);
 }

@@ -1,94 +1,106 @@
 # CDF Donation Form with PayPal and Stripe
 
-[![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue.svg)](https://wordpress.org)
-[![PHP](https://img.shields.io/badge/PHP-7.4%2B%20%7C%208.x-777BB4.svg)](https://www.php.net)
-[![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
+A secure, lightweight WordPress donation plugin for one-time and monthly recurring donations via **Stripe Checkout** and the **PayPal REST API**.
 
-A secure, lightweight, and modular WordPress fundraising plugin that integrates **Stripe Checkout** and **PayPal REST API** for seamless **One-Time** and **Monthly Recurring** donations. Designed with an Elementor-style style editor, dynamic CSS variables, built-in revenue analytics, and automated donor receipt notifications.
-
----
-
-## 🌟 Key Features
-
-* **Dual Gateway Integration:** Complete support for Stripe Checkout (Credit/Debit Cards) and PayPal REST API.
-* **Flexible Donation Frequencies:** Easily handle single **One-Time** donations and **Monthly Recurring Subscriptions**.
-* **Elementor-Style Custom Styling:** Modern tabbed control panel (**Normal**, **Hover**, **Active**) for Amount Buttons, Gateway Cards, and Submit Buttons with Hex code inputs and global border-radius geometry.
-* **Built-in Revenue Analytics:** Dedicated reporting dashboard tracking total volume, gateway revenue splits (Stripe vs. PayPal), and frequency breakdowns.
-* **Automated Receipt & Email Notifications:** Automated HTML thank-you emails sent to donors and notification summaries sent to administrators.
-* **Custom Post Type Tracking (`donation`):** Every successful transaction is logged with unique auto-increment serial numbers, mode badges, and transaction IDs.
-* **Developer Friendly:** Completely modular codebase utilizing strict `cdf_` prefixes, WordPress nonces, and sanitized metadata handlers.
+- **Version:** 2.1.0
+- **Requires:** WordPress 5.8+, PHP 7.4+
+- **License:** GPLv2 or later
 
 ---
 
-## 📂 File & Directory Architecture
+## Features
 
-```text
-donation-form-paypal-stripe/
-│
-├── donation-form-paypal-stripe.php    # Main Plugin File, Activation Hooks & Dynamic CSS Generator
-├── readme.txt                          # Official WordPress.org Repository Metadata
-├── README.md                           # GitHub Project Documentation
-│
-├── includes/
-│   ├── class-cpt.php                   # Registers 'donation' Custom Post Type & Admin Columns
-│   ├── class-settings.php              # Sub-menus: Forms, Analytics, Style, Email & Settings
-│   ├── class-logger.php                # Payment Routing, Webhook Verifications & Database Logging
-│   ├── class-emails.php                # Admin Notifications & Donor Receipt Email Logic
-│   └── class-shortcodes.php            # [donation_form] & [donation_receipt] Shortcodes
-│
-└── assets/
-    ├── css/
-    │   ├── admin-style.css             # Admin Dashboard & Control Panel Styles
-    │   └── frontend-style.css          # Frontend Form CSS & Dynamic Variable Injection
-    └── js/
-        └── frontend-script.js          # Interactive Amount & Gateway Selector Script
+| Area | Details |
+|---|---|
+| Payments | Stripe Checkout (cards, wallets, Link) and PayPal REST (orders + billing subscriptions) |
+| Frequencies | One-time and monthly, with a switch inside a single form |
+| Verification | Amounts and donor identity are read from the gateway API — never from URL parameters |
+| Webhooks | Stripe and PayPal endpoints with signature verification for renewals, refunds and failures |
+| Admin | One page, six tabs: Overview, Form, Style, Emails, Settings, Tools |
+| Reporting | Revenue, gateway split, monthly trend, top donors, searchable list, details modal, CSV export |
+| Emails | Editable templates, placeholders, custom sender, test email |
+| Styling | Color pickers for normal/hover/active states + border radius (CSS variables) |
+| Security | Nonces on every submission and save, honeypot, rate limiting, server-side validation, sanitized settings |
+| Performance | Assets only load where used, cached analytics and generated CSS |
+
+## Shortcodes
+
+```
+[donation_form]                                 Full form with frequency switch
+[donation_form type="one_time"]                 One-time only
+[donation_form type="monthly"]                  Monthly only
+[donation_form amounts="500,250,100,50"]        Custom preset buttons
+[donation_receipt]                              Receipt for the success page
 ```
 
----
+## Installation
 
-## 🛠️ Shortcode Reference
+1. Copy the plugin folder to `/wp-content/plugins/`.
+2. Activate it — the `/donation-success/` and `/donation-canceled/` pages are created automatically.
+3. Open **Donations → Dashboard → Settings** and enter your Stripe and PayPal credentials.
+4. Add `[donation_form]` to a page.
 
-### 1. One-Time Donation Form
-Renders the compact one-time donation form with preset amount buttons and gateway selector:
+## How a donation flows
 
-`[donation_form]` *(Or explicitly using `[donation_form type="one_time"]`)*
+1. The donor submits the form. The nonce, honeypot, rate limit and every field are validated server-side.
+2. A pending record is stored server-side and referenced by an unguessable key — the return URL carries no amount, name or email.
+3. The donor is redirected to Stripe Checkout or PayPal.
+4. On return (or via webhook, whichever happens first) the plugin queries the gateway API, confirms the payment, and logs a `donation` post with a unique serial number.
+5. Admin and donor emails are sent, and the analytics cache is cleared.
 
-### 2. Monthly Recurring Subscription Form
-Renders the recurring donation form linked to Stripe Subscriptions and PayPal Billing Plans:
+## File structure
 
-`[donation_form type="monthly"]`
+```
+cdf-donation-form-with-paypal-and-stripe.php  Plugin header, constants, global config, helpers
+includes/
+  class-donation-admin.php        Single tabbed admin page, Settings API, export, tests
+  class-donation-cpt.php          `donation` post type, admin columns, details metabox
+  class-donation-emails.php       Admin + donor HTML emails, templates, test email
+  class-donation-shortcodes.php   [donation_form] and [donation_receipt]
+  class-payment-processor.php     Submission handling, gateway calls, verification, serials
+  class-webhooks.php              Stripe/PayPal webhook endpoints
+assets/
+  css/frontend-style.css          Front-end styles (prefixed, responsive, RTL)
+  css/admin-style.css             Admin dashboard styles
+  js/frontend-script.js           Amount sync, gateway selection, submit lock
+  js/admin-script.js              Tabs, color pickers, donation modal, copy buttons
+uninstall.php                     Optional full data removal
+```
 
-### 3. Donation Receipt
-Displays the transaction receipt summary on your success redirect page (`/donation-success/`):
-`[donation_receipt]`
+## Re-branding
 
----
+Plugin identity lives in one place — the constants and `$GLOBALS['cdf_plugin_config']` array at the top of the main plugin file:
 
-## ⚙️ Installation & Setup
+```php
+define( 'CDF_PLUGIN_NAME', 'CDF Donation Form with PayPal and Stripe' );
+define( 'CDF_PLUGIN_SLUG', 'cdf-donation-form-with-paypal-and-stripe' );
+define( 'CDF_PLUGIN_VERSION', '2.1.0' );
+define( 'CDF_PLUGIN_PREFIX', 'cdf_' );
+define( 'CDF_PLUGIN_CURRENCY', 'USD' );
+```
 
-1. Clone or download this repository into your WordPress plugins directory:
-   cd wp-content/plugins/
-   git clone https://github.com/razuahammad55/donation-form-paypal-stripe.git donation-form-paypal-stripe
+Change the name, slug, version, currency or default amounts there and the admin UI, emails and asset versions follow.
 
-2. Activate **CDF Donation Form for PayPal and Stripe** via **Plugins > Installed Plugins** in WordPress.
-3. Upon activation, `/donation-success/` and `/donation-canceled/` pages are created automatically.
-4. Go to **Donations > Settings** in your WordPress admin menu:
-   * Select **Test / Sandbox** or **Live / Production** mode.
-   * Enter your **Stripe Publishable Key** (`pk_...`) and **Stripe Secret Key** (`sk_...`).
-   * Enter your **PayPal Client ID**, **Secret Key**, and **Monthly Plan ID**.
-5. Embed `[donation_form]` on any page, post, or Elementor widget!
+## Hooks
 
----
+**Actions**
 
-## 👨‍💻 Author & Developer Info
+- `cdf_donation_logged( $post_id, $data )` — after a donation is stored
+- `cdf_donation_status_changed( $post_id, $status )` — webhook status update
 
-* **Developer:** Razu Ahammad
-* **Specialization:** WordPress Speed Optimization, Malware Security & Elementor Web Design
-* **Upwork Profile:** https://www.upwork.com/freelancers/razuahammad55
-* **Contact Email:** razuahammad55@gmail.com
+**Filters**
 
----
+- `cdf_donation_data` — donation array before it is saved
+- `cdf_stripe_checkout_body` — Stripe Checkout Session parameters
+- `cdf_paypal_checkout_payload` — PayPal order/subscription payload
 
-## 📄 License
+## Webhooks
 
-Distributed under the **GNU General Public License v2.0 or later**. See `LICENSE` for details.
+Add these URLs in the gateway dashboards and paste the signing secret/webhook ID under **Settings**:
+
+- Stripe: `https://example.com/wp-json/cdf/v1/stripe`
+- PayPal: `https://example.com/wp-json/cdf/v1/paypal`
+
+## Changelog
+
+See [readme.txt](readme.txt) for the full changelog.

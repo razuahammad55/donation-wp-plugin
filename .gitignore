@@ -1,0 +1,22 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Dependencies & build output
+node_modules/
+vendor/
+build/
+dist/
+
+# Logs & local files
+*.log
+*.sql
+*.zip
+.env
+.env.*
+
+# Screenshots produced locally for the WordPress.org listing
+/screenshots/*.psd
