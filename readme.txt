@@ -5,7 +5,7 @@ Tags: donation, paypal, stripe, fundraising, non-profit, recurring donations
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,6 +22,8 @@ Accept secure payments with **Stripe Checkout** (cards, wallets, Link) and the *
 - **One admin page, six tabs** — Overview (analytics + donation list), Form, Style, Emails, Settings and Tools. No scattered submenus.
 - **Dual payment gateways** — Stripe Checkout and PayPal REST API, each with separate test and live credentials.
 - **One-time and monthly** — a single form can offer both with a built-in frequency switch.
+- **Two amount modes** — preset buttons can fill the amount field, or the field can stay empty with a "Custom amount" placeholder while a typed amount overrides the selected preset.
+- **Delete donations** — remove a single donation or a bulk selection together with all of its meta, straight from the list.
 - **Verified payments** — donation amounts, names and emails are read from the gateway API, never from the browser. Webhooks keep renewals and refunds in sync.
 - **Donation dashboard** — revenue totals, gateway breakdown, monthly trend, top donors, searchable donation table with a details modal and CSV export.
 - **Branded HTML emails** — editable subjects, headings and intro text with placeholders, plus a test-email button.
@@ -73,6 +75,15 @@ PayPal plans have a fixed price. Create a plan priced at 1.00 of your store curr
 = Why do I see "Test / Sandbox" badges in the donation list? =
 Each donation records the mode it was made in, so test data can never be confused with live revenue.
 
+= Why would I disable nonce verification? =
+Only when a full-page cache or CDN serves stale security tokens and donations fail with "session expired". The plugin sets DONOTCACHEPAGE automatically, so most setups never need it. With the switch on, honeypot, rate limiting and all validation still apply.
+
+= How does custom amount mode work? =
+With the toggle off (default), clicking a preset fills the number field with that value. With it on, the field keeps its placeholder until the donor types — a typed amount overrides the selected preset and unchecks it, while leaving the field empty uses the preset.
+
+= Can I delete donations? =
+Yes. Use the Delete button on a row, or tick several rows and choose Delete selected. The record and all of its meta (transaction ID, donor details, status) are removed permanently, and analytics refresh immediately.
+
 = Where are the old submenu pages? =
 Everything now lives on one page: **Donations → Dashboard**, with tabs for Overview, Form, Style, Emails, Settings and Tools.
 
@@ -86,6 +97,13 @@ Everything now lives on one page: **Donations → Dashboard**, with tabs for Ove
 6. Gateway settings with test/live credentials and webhook endpoints.
 
 == Changelog ==
+
+= 2.2.0 =
+- Restored nonce verification as an opt-out toggle under Form → Security & Caching, with an inline warning; honeypot, rate limiting and validation stay active either way.
+- Added custom amount mode: the amount field keeps its placeholder, presets only select, and a typed amount overrides the preset (which is then unchecked).
+- Added single and bulk donation deletion from the dashboard, removing the record and all of its meta.
+- Settings now show only the credentials for the active mode (test vs live) while keeping both stored.
+- Added `cdf_before_delete_donation` action.
 
 = 2.1.0 =
 - Security: PayPal donations are now verified through the API — donor name, email and amount can no longer be forged through the return URL.

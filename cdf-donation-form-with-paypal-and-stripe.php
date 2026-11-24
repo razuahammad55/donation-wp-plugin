@@ -3,7 +3,7 @@
  * Plugin Name: CDF Donation Form with PayPal and Stripe
  * Plugin URI:  https://github.com/razuahammad55/cdf-donation-form-with-paypal-and-stripe
  * Description: A secure, modular WordPress donation plugin supporting Stripe Checkout and PayPal REST API for One-Time and Monthly Recurring donations.
- * Version:     2.1.0
+ * Version:     2.2.0
  * Author:      Razu Ahammad
  * Author URI:  https://profiles.wordpress.org/razuahammad/
  * License:     GPLv2 or later
@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * ========================================================================= */
 define( 'CDF_PLUGIN_NAME', 'CDF Donation Form with PayPal and Stripe' );
 define( 'CDF_PLUGIN_SLUG', 'cdf-donation-form-with-paypal-and-stripe' );
-define( 'CDF_PLUGIN_VERSION', '2.1.0' );
+define( 'CDF_PLUGIN_VERSION', '2.2.0' );
 define( 'CDF_PLUGIN_TEXT_DOMAIN', 'cdf-donation-form-with-paypal-and-stripe' );
 define( 'CDF_PLUGIN_PREFIX', 'cdf_' );
 define( 'CDF_PLUGIN_FILE', __FILE__ );
@@ -92,6 +92,8 @@ function cdf_get_general_settings() {
         'success_page_id'       => '',
         'cancel_page_id'        => '',
         'stripe_payment_methods' => 'card,link',
+        'custom_amount_mode'     => '0',
+        'custom_amount_label'    => 'Custom amount',
     );
     $saved = get_option( 'cdf_general_settings', array() );
     if ( is_array( $saved ) ) {
@@ -133,6 +135,22 @@ function cdf_get_preset_amounts() {
         $amounts = cdf_get_config( 'default_amounts', array( 500, 250, 100, 50, 25, 10 ) );
     }
     return $amounts;
+}
+
+/**
+ * Is "custom amount only" mode enabled? When enabled the preset buttons do
+ * not fill the number input; the donor types an amount only if they want one.
+ */
+function cdf_is_custom_amount_mode() {
+    $general = cdf_get_general_settings();
+    return isset( $general['custom_amount_mode'] ) && '1' === $general['custom_amount_mode'];
+}
+
+/**
+ * Is nonce verification disabled (cached-site compatibility switch)?
+ */
+function cdf_is_nonce_check_disabled() {
+    return '1' === get_option( 'cdf_nonce_bypass', '0' );
 }
 
 function cdf_get_success_url() {

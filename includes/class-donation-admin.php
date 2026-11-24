@@ -119,6 +119,12 @@ function cdf_register_settings() {
         'default'           => 'sandbox',
     ) );
 
+    register_setting( 'cdf_general_group', 'cdf_nonce_bypass', array(
+        'type'              => 'string',
+        'sanitize_callback' => 'cdf_sanitize_toggle',
+        'default'           => '0',
+    ) );
+
     register_setting( 'cdf_tools_group', 'cdf_advanced_settings', array(
         'type'              => 'array',
         'sanitize_callback' => 'cdf_sanitize_advanced_settings',
@@ -178,6 +184,7 @@ function cdf_sanitize_general_settings( $input ) {
     $text_fields = array(
         'currency', 'currency_symbol', 'button_text_onetime', 'button_text_monthly',
         'thank_you_message', 'default_amount', 'min_amount', 'max_amount', 'preset_amounts',
+        'custom_amount_label',
     );
     foreach ( $text_fields as $field ) {
         if ( isset( $input[ $field ] ) ) {
@@ -210,7 +217,7 @@ function cdf_sanitize_general_settings( $input ) {
 
     $toggles = array(
         'enable_stripe', 'enable_paypal', 'enable_onetime', 'enable_monthly',
-        'show_phone_field',
+        'show_phone_field', 'custom_amount_mode',
     );
     foreach ( $toggles as $toggle ) {
         $out[ $toggle ] = isset( $input[ $toggle ] ) ? '1' : '0';
@@ -634,6 +641,20 @@ function cdf_render_tab_overview() {
     $analytics = cdf_get_analytics_data();
     $symbol    = cdf_get_currency_symbol();
 
+    // phpcs:disable WordPress.Security.NonceVerification.Recommended
+    if ( isset( $_GET['cdf_deleted'] ) ) {
+        $deleted = absint( $_GET['cdf_deleted'] );
+        echo '<div class="notice notice-success is-dismissible"><p>'
+            . esc_html( sprintf( _n( '%s donation deleted permanently.', '%s donations deleted permanently.', $deleted, CDF_PLUGIN_TEXT_DOMAIN ), number_format_i18n( $deleted ) ) )
+            . '</p></div>';
+    }
+    if ( isset( $_GET['cdf_delete_error'] ) ) {
+        echo '<div class="notice notice-error is-dismissible"><p>'
+            . esc_html__( 'The donation could not be deleted. It may already be gone.', CDF_PLUGIN_TEXT_DOMAIN )
+            . '</p></div>';
+    }
+    // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
     $gateway_totals = array( 'Stripe' => array( 'one' => 0, 'monthly' => 0, 'count' => 0 ), 'PayPal' => array( 'one' => 0, 'monthly' => 0, 'count' => 0 ) );
     foreach ( $analytics['breakdown'] as $row ) {
         $key = ( 'PayPal' === $row['gateway'] ) ? 'PayPal' : 'Stripe';
@@ -851,9 +872,25 @@ function cdf_render_donations_table() {
         return;
     }
     ?>
+    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cdf-bulk-form" id="cdf-bulk-form">
+        <?php wp_nonce_field( 'cdf_delete_donation' ); ?>
+        <input type="hidden" name="action" value="cdf_delete_donation">
+
+        <div class="cdf-bulk-bar">
+            <label class="cdf-bulk-all">
+                <input type="checkbox" id="cdf-select-all">
+                <?php esc_html_e( 'Select all', CDF_PLUGIN_TEXT_DOMAIN ); ?>
+            </label>
+            <button type="submit" class="button cdf-bulk-delete" data-confirm="<?php esc_attr_e( 'Permanently delete the selected donations and all of their data? This cannot be undone.', CDF_PLUGIN_TEXT_DOMAIN ); ?>">
+                <?php esc_html_e( 'Delete selected', CDF_PLUGIN_TEXT_DOMAIN ); ?>
+            </button>
+            <span class="cdf-muted cdf-bulk-hint"><?php esc_html_e( 'Deleting a donation also removes its meta (transaction ID, donor details, webhook status).', CDF_PLUGIN_TEXT_DOMAIN ); ?></span>
+        </div>
+
     <table class="cdf-table widefat">
         <thead>
             <tr>
+                <th class="cdf-col-check"><input type="checkbox" id="cdf-select-all-top" aria-label="<?php esc_attr_e( 'Select all donations', CDF_PLUGIN_TEXT_DOMAIN ); ?>"></th>
                 <th><?php esc_html_e( 'Receipt', CDF_PLUGIN_TEXT_DOMAIN ); ?></th>
                 <th><?php esc_html_e( 'Donor', CDF_PLUGIN_TEXT_DOMAIN ); ?></th>
                 <th><?php esc_html_e( 'Email', CDF_PLUGIN_TEXT_DOMAIN ); ?></th>
@@ -874,6 +911,9 @@ function cdf_render_donations_table() {
                 $status_v  = $data['status'] ? $data['status'] : 'completed';
                 ?>
                 <tr>
+                    <td class="cdf-col-check">
+                        <input type="checkbox" class="cdf-donation-check" name="donation_ids[]" value="<?php echo esc_attr( $post_id ); ?>" aria-label="<?php esc_attr_e( 'Select donation', CDF_PLUGIN_TEXT_DOMAIN ); ?>">
+                    </td>
                     <td><span class="cdf-mono">#<?php echo esc_html( $data['serial'] ); ?></span></td>
                     <td><strong><?php echo esc_html( $data['anonymous'] ? __( 'Anonymous', CDF_PLUGIN_TEXT_DOMAIN ) : $data['name'] ); ?></strong></td>
                     <td><?php echo esc_html( $data['email'] ? $data['email'] : '—' ); ?></td>
@@ -890,11 +930,17 @@ function cdf_render_donations_table() {
                         <?php if ( 'test / sandbox' === strtolower( $data['environment'] ) ) : ?>
                             <span class="cdf-mini-badge"><?php esc_html_e( 'Test', CDF_PLUGIN_TEXT_DOMAIN ); ?></span>
                         <?php endif; ?>
+                        <button type="submit" class="button button-small cdf-delete-donation"
+                            name="donation_id" value="<?php echo esc_attr( $post_id ); ?>"
+                            data-confirm="<?php esc_attr_e( 'Permanently delete this donation and all of its data? This cannot be undone.', CDF_PLUGIN_TEXT_DOMAIN ); ?>">
+                            <?php esc_html_e( 'Delete', CDF_PLUGIN_TEXT_DOMAIN ); ?>
+                        </button>
                     </td>
                 </tr>
             <?php endwhile; ?>
         </tbody>
     </table>
+    </form>
 
     <?php
     $total_pages = (int) $query->max_num_pages;
@@ -1035,6 +1081,13 @@ function cdf_render_tab_forms() {
                 cdf_admin_text_field( 'cdf_general_settings[default_amount]', $general['default_amount'], __( 'Default amount', CDF_PLUGIN_TEXT_DOMAIN ), sprintf( /* translators: %s symbol */ esc_html__( 'Pre-selected amount (%s).', CDF_PLUGIN_TEXT_DOMAIN ), esc_html( $symbol ) ) );
                 cdf_admin_text_field( 'cdf_general_settings[min_amount]', $general['min_amount'], __( 'Minimum amount', CDF_PLUGIN_TEXT_DOMAIN ) );
                 cdf_admin_text_field( 'cdf_general_settings[max_amount]', $general['max_amount'], __( 'Maximum amount', CDF_PLUGIN_TEXT_DOMAIN ) );
+                cdf_admin_toggle_field(
+                    'cdf_general_settings[custom_amount_mode]',
+                    $general['custom_amount_mode'],
+                    __( 'Custom amount mode', CDF_PLUGIN_TEXT_DOMAIN ),
+                    __( 'OFF: clicking a preset fills the number field and the donor can edit it. ON: the number field stays empty with a placeholder; clicking a preset only selects it, and a typed amount overrides the preset (the preset is then unchecked).', CDF_PLUGIN_TEXT_DOMAIN )
+                );
+                cdf_admin_text_field( 'cdf_general_settings[custom_amount_label]', $general['custom_amount_label'], __( 'Custom amount placeholder', CDF_PLUGIN_TEXT_DOMAIN ), __( 'Shown inside the amount field in custom amount mode, e.g. "Custom amount".', CDF_PLUGIN_TEXT_DOMAIN ) );
                 ?>
             </table>
         </div>
@@ -1093,13 +1146,40 @@ function cdf_render_tab_forms() {
             </table>
         </div>
 
+        <div class="cdf-card">
+            <h2><?php esc_html_e( 'Security & Caching', CDF_PLUGIN_TEXT_DOMAIN ); ?></h2>
+            <?php $nonce_bypass = get_option( 'cdf_nonce_bypass', '0' ); ?>
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row"><?php esc_html_e( 'Nonce verification', CDF_PLUGIN_TEXT_DOMAIN ); ?></th>
+                    <td>
+                        <label class="cdf-switch">
+                            <input type="checkbox" name="cdf_nonce_bypass" value="1" <?php checked( '1', $nonce_bypass ); ?>>
+                            <span class="cdf-slider"></span>
+                        </label>
+                        <span class="cdf-env-label">
+                            <?php echo '1' === $nonce_bypass ? esc_html__( 'Disabled (cached-site mode)', CDF_PLUGIN_TEXT_DOMAIN ) : esc_html__( 'Enabled (recommended)', CDF_PLUGIN_TEXT_DOMAIN ); ?>
+                        </span>
+                        <p class="description">
+                            <?php esc_html_e( 'Keep this on unless your full-page cache serves stale security tokens and donations fail with "session expired" — for example Cloudflare APO, WP Rocket or a host cache that ignores DONOTCACHEPAGE.', CDF_PLUGIN_TEXT_DOMAIN ); ?>
+                        </p>
+                        <?php if ( '1' === $nonce_bypass ) : ?>
+                            <div class="cdf-notice cdf-notice-warning cdf-notice-inline">
+                                <?php esc_html_e( 'Warning: with nonce verification off, form submissions are not protected against cross-site request forgery. Honeypot, rate limiting and every validation rule stay active — but prefer excluding the form page from caching instead.', CDF_PLUGIN_TEXT_DOMAIN ); ?>
+                            </div>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
         <?php submit_button( __( 'Save form settings', CDF_PLUGIN_TEXT_DOMAIN ) ); ?>
     </form>
 
     <div class="cdf-card">
         <h2><?php esc_html_e( 'Caching Note', CDF_PLUGIN_TEXT_DOMAIN ); ?></h2>
         <p class="cdf-muted">
-            <?php esc_html_e( 'The form submits a security nonce, so the page holding the shortcode must not be served from a full-page cache. The plugin sets DONOTCACHEPAGE automatically — also exclude the page in Cloudflare, WP Rocket or your host cache if submissions still fail.', CDF_PLUGIN_TEXT_DOMAIN ); ?>
+            <?php esc_html_e( 'The plugin sets DONOTCACHEPAGE on pages that hold the form, so most caching plugins skip them automatically. If your host or CDN still caches the page, either exclude it manually or turn off nonce verification under Security & Caching above.', CDF_PLUGIN_TEXT_DOMAIN ); ?>
         </p>
     </div>
 
@@ -1363,25 +1443,53 @@ function cdf_render_tab_settings() {
 
         <div class="cdf-card">
             <h2><?php esc_html_e( 'Stripe', CDF_PLUGIN_TEXT_DOMAIN ); ?></h2>
+            <div class="cdf-env-block cdf-env-test" <?php echo 'live' === $env ? 'style="display:none"' : ''; ?>>
+                <h3 class="cdf-env-heading"><?php esc_html_e( 'Sandbox / test credentials', CDF_PLUGIN_TEXT_DOMAIN ); ?></h3>
+                <table class="form-table" role="presentation">
+                    <?php
+                    cdf_admin_text_field( 'cdf_api_settings[stripe_publishable_test]', $get( 'stripe_publishable_test' ), __( 'Publishable key (test)', CDF_PLUGIN_TEXT_DOMAIN ), 'pk_test_…' );
+                    cdf_admin_text_field( 'cdf_api_settings[stripe_secret_test]', $get( 'stripe_secret_test' ), __( 'Secret key (test)', CDF_PLUGIN_TEXT_DOMAIN ), 'sk_test_…', 'password' );
+                    ?>
+                </table>
+            </div>
+            <div class="cdf-env-block cdf-env-live" <?php echo 'live' === $env ? '' : 'style="display:none"'; ?>>
+                <h3 class="cdf-env-heading"><?php esc_html_e( 'Live / production credentials', CDF_PLUGIN_TEXT_DOMAIN ); ?></h3>
+                <table class="form-table" role="presentation">
+                    <?php
+                    cdf_admin_text_field( 'cdf_api_settings[stripe_publishable_live]', $get( 'stripe_publishable_live' ), __( 'Publishable key (live)', CDF_PLUGIN_TEXT_DOMAIN ), 'pk_live_…' );
+                    cdf_admin_text_field( 'cdf_api_settings[stripe_secret_live]', $get( 'stripe_secret_live' ), __( 'Secret key (live)', CDF_PLUGIN_TEXT_DOMAIN ), 'sk_live_…', 'password' );
+                    ?>
+                </table>
+            </div>
             <table class="form-table" role="presentation">
                 <?php
-                cdf_admin_text_field( 'cdf_api_settings[stripe_publishable_test]', $get( 'stripe_publishable_test' ), __( 'Publishable key (test)', CDF_PLUGIN_TEXT_DOMAIN ), 'pk_test_…' );
-                cdf_admin_text_field( 'cdf_api_settings[stripe_secret_test]', $get( 'stripe_secret_test' ), __( 'Secret key (test)', CDF_PLUGIN_TEXT_DOMAIN ), 'sk_test_…', 'password' );
-                cdf_admin_text_field( 'cdf_api_settings[stripe_publishable_live]', $get( 'stripe_publishable_live' ), __( 'Publishable key (live)', CDF_PLUGIN_TEXT_DOMAIN ), 'pk_live_…' );
-                cdf_admin_text_field( 'cdf_api_settings[stripe_secret_live]', $get( 'stripe_secret_live' ), __( 'Secret key (live)', CDF_PLUGIN_TEXT_DOMAIN ), 'sk_live_…', 'password' );
-                cdf_admin_text_field( 'cdf_api_settings[stripe_webhook_secret]', $get( 'stripe_webhook_secret' ), __( 'Webhook signing secret', CDF_PLUGIN_TEXT_DOMAIN ), 'whsec_…', 'password' );
+                cdf_admin_text_field( 'cdf_api_settings[stripe_webhook_secret]', $get( 'stripe_webhook_secret' ), __( 'Webhook signing secret', CDF_PLUGIN_TEXT_DOMAIN ), __( 'whsec_… — shared by both modes.', CDF_PLUGIN_TEXT_DOMAIN ), 'password' );
                 ?>
             </table>
         </div>
 
         <div class="cdf-card">
             <h2><?php esc_html_e( 'PayPal', CDF_PLUGIN_TEXT_DOMAIN ); ?></h2>
+            <div class="cdf-env-block cdf-env-test" <?php echo 'live' === $env ? 'style="display:none"' : ''; ?>>
+                <h3 class="cdf-env-heading"><?php esc_html_e( 'Sandbox / test credentials', CDF_PLUGIN_TEXT_DOMAIN ); ?></h3>
+                <table class="form-table" role="presentation">
+                    <?php
+                    cdf_admin_text_field( 'cdf_api_settings[paypal_client_test]', $get( 'paypal_client_test' ), __( 'Client ID (test)', CDF_PLUGIN_TEXT_DOMAIN ) );
+                    cdf_admin_text_field( 'cdf_api_settings[paypal_secret_test]', $get( 'paypal_secret_test' ), __( 'Secret (test)', CDF_PLUGIN_TEXT_DOMAIN ), '', 'password' );
+                    ?>
+                </table>
+            </div>
+            <div class="cdf-env-block cdf-env-live" <?php echo 'live' === $env ? '' : 'style="display:none"'; ?>>
+                <h3 class="cdf-env-heading"><?php esc_html_e( 'Live / production credentials', CDF_PLUGIN_TEXT_DOMAIN ); ?></h3>
+                <table class="form-table" role="presentation">
+                    <?php
+                    cdf_admin_text_field( 'cdf_api_settings[paypal_client_live]', $get( 'paypal_client_live' ), __( 'Client ID (live)', CDF_PLUGIN_TEXT_DOMAIN ) );
+                    cdf_admin_text_field( 'cdf_api_settings[paypal_secret_live]', $get( 'paypal_secret_live' ), __( 'Secret (live)', CDF_PLUGIN_TEXT_DOMAIN ), '', 'password' );
+                    ?>
+                </table>
+            </div>
             <table class="form-table" role="presentation">
                 <?php
-                cdf_admin_text_field( 'cdf_api_settings[paypal_client_test]', $get( 'paypal_client_test' ), __( 'Client ID (test)', CDF_PLUGIN_TEXT_DOMAIN ) );
-                cdf_admin_text_field( 'cdf_api_settings[paypal_secret_test]', $get( 'paypal_secret_test' ), __( 'Secret (test)', CDF_PLUGIN_TEXT_DOMAIN ), '', 'password' );
-                cdf_admin_text_field( 'cdf_api_settings[paypal_client_live]', $get( 'paypal_client_live' ), __( 'Client ID (live)', CDF_PLUGIN_TEXT_DOMAIN ) );
-                cdf_admin_text_field( 'cdf_api_settings[paypal_secret_live]', $get( 'paypal_secret_live' ), __( 'Secret (live)', CDF_PLUGIN_TEXT_DOMAIN ), '', 'password' );
                 cdf_admin_text_field( 'cdf_api_settings[paypal_plan_id]', $get( 'paypal_plan_id' ), __( 'Monthly Plan ID', CDF_PLUGIN_TEXT_DOMAIN ), __( 'Required for PayPal monthly donations. Create a plan priced at 1.00 of your currency — the donation amount is sent as quantity.', CDF_PLUGIN_TEXT_DOMAIN ) );
                 cdf_admin_text_field( 'cdf_api_settings[paypal_webhook_id]', $get( 'paypal_webhook_id' ), __( 'Webhook ID', CDF_PLUGIN_TEXT_DOMAIN ), __( 'From PayPal → Apps → Webhooks. Used to verify webhook signatures.', CDF_PLUGIN_TEXT_DOMAIN ) );
                 ?>
@@ -1501,6 +1609,83 @@ function cdf_render_tab_tools() {
 /* =========================================================================
  * ADMIN-POST HANDLERS
  * ========================================================================= */
+
+add_action( 'admin_post_cdf_delete_donation', 'cdf_handle_delete_donation' );
+/**
+ * Permanently delete one or more donations with all of their meta.
+ */
+function cdf_handle_delete_donation() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'You do not have permission to delete donations.', CDF_PLUGIN_TEXT_DOMAIN ) );
+    }
+    check_admin_referer( 'cdf_delete_donation' );
+
+    $ids = array();
+
+    // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified above.
+    if ( ! empty( $_POST['donation_id'] ) ) {
+        // Single row delete wins; ignore any checked boxes in that case.
+        $ids[] = absint( wp_unslash( $_POST['donation_id'] ) );
+    } elseif ( isset( $_POST['donation_ids'] ) && is_array( $_POST['donation_ids'] ) ) {
+        foreach ( wp_unslash( $_POST['donation_ids'] ) as $raw_id ) {
+            $ids[] = absint( $raw_id );
+        }
+    }
+    // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+    $ids = array_values( array_unique( array_filter( $ids ) ) );
+
+    if ( empty( $ids ) ) {
+        wp_safe_redirect(
+            add_query_arg(
+                array(
+                    'post_type'        => 'donation',
+                    'page'             => 'cdf-settings',
+                    'cdf_delete_error' => '1',
+                ),
+                admin_url( 'edit.php' )
+            )
+        );
+        exit;
+    }
+
+    $deleted = 0;
+    foreach ( $ids as $id ) {
+        // Only ever touch donation records.
+        if ( 'donation' !== get_post_type( $id ) ) {
+            continue;
+        }
+        /**
+         * Fires before a donation is permanently deleted.
+         *
+         * @param int $id Donation post ID.
+         */
+        do_action( 'cdf_before_delete_donation', $id );
+
+        // wp_delete_post() also removes every _donation_* meta row.
+        if ( wp_delete_post( $id, true ) ) {
+            $deleted++;
+        }
+    }
+
+    delete_transient( 'cdf_analytics_cache' );
+
+    $redirect = add_query_arg(
+        array(
+            'post_type'   => 'donation',
+            'page'        => 'cdf-settings',
+            'cdf_deleted' => $deleted,
+        ),
+        admin_url( 'edit.php' )
+    );
+
+    if ( 0 === $deleted ) {
+        $redirect = add_query_arg( 'cdf_delete_error', '1', $redirect );
+    }
+
+    wp_safe_redirect( $redirect );
+    exit;
+}
 
 add_action( 'admin_post_cdf_export_csv', 'cdf_handle_export_csv' );
 /**

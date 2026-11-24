@@ -20,17 +20,22 @@
 			$('#cdf-subpane-' + target).show();
 		});
 
-		/* ---- Environment toggle ---- */
+		/* ---- Environment toggle: show test or live credentials ---- */
 		var $envSwitch = $('#cdf_env_switch');
 		if ($envSwitch.length) {
-			$envSwitch.on('change', function () {
+			var syncEnv = function () {
+				var isLive = $envSwitch.is(':checked');
 				$('#cdf_env_label').text(
-					this.checked
+					isLive
 						? (window.cdfAdmin && window.cdfAdmin.liveLabel) || 'Live / Production'
 						: (window.cdfAdmin && window.cdfAdmin.testLabel) || 'Test / Sandbox'
 				);
-				$('.cdf-env-block').toggle(!this.checked);
-			});
+				$('.cdf-env-test').toggle(!isLive);
+				$('.cdf-env-live').toggle(isLive);
+			};
+
+			$envSwitch.on('change', syncEnv);
+			syncEnv();
 		}
 
 		/* ---- Copy to clipboard ---- */
@@ -62,6 +67,27 @@
 				$temp.remove();
 				done();
 			}
+		});
+
+		/* ---- Delete donation confirmation ---- */
+		$(document).on('click', '.cdf-delete-donation, .cdf-bulk-delete', function (event) {
+			var message = $(this).attr('data-confirm');
+			if (message && !window.confirm(message)) {
+				event.preventDefault();
+				return false;
+			}
+			return true;
+		});
+
+		/* ---- Select all donations ---- */
+		var $checks = $('.cdf-donation-check');
+		$('#cdf-select-all, #cdf-select-all-top').on('change', function () {
+			$checks.prop('checked', this.checked);
+		});
+
+		$checks.on('change', function () {
+			var allChecked = $checks.length > 0 && $checks.filter(':checked').length === $checks.length;
+			$('#cdf-select-all, #cdf-select-all-top').prop('checked', allChecked);
 		});
 
 		/* ---- Donation modal ---- */
